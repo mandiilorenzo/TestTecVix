@@ -73,21 +73,21 @@ export interface IVMCreatedResponse {
   ram: number;
   hasBackup: boolean;
   os: string;
-  user: string;
   vCPU: number;
-  status: string | null;
+  status: TStatus | string | null; 
   idBrandMaster: number | null;
-  pass: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   deletedAt: Date | string | null;
-  task: IVMTask[];
   brandMaster: {
-    brandLogo: string;
+    brandLogo: string | null;
     brandName: string;
   } | null;
-  vmIpsRegions: { label: string; region: string } | null;
-  idIPList: number | null;
+  user?: string;
+  pass?: string | null;
+  task?: IVMTask[];
+  vmIpsRegions?: { label: string; region: string } | null;
+  idIPList?: number | null;
   idVmIpsRegions?: number | null;
   idPortsByRegion?: number | null;
   idVlanGroup?: number | null;
@@ -129,3 +129,16 @@ export const taskMock: IVMTask = {
   updatedAt: new Date(),
   deletedAt: null,
 };
+
+export interface ICreateVMPayload {
+  vmName: string;
+  vCPU: number;
+  ram: number;
+  disk: number;
+  os: string;
+  hasBackup?: boolean;
+  idBrandMaster?: number | null;
+  pass: string;
+  networkType?: number; 
+}
+

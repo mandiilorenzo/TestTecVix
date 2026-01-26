@@ -2,7 +2,12 @@ import TableBody from "@mui/material/TableBody";
 import { useZMyVMsList } from "../../../../stores/useZMyVMsList";
 import { RowVM } from "./RowVM";
 
-export const EnhancedTableRows = () => {
+interface EnhancedTableRowsProps {
+  onToggleStatus: (id: number, currentStatus: string) => void;
+  onDelete: (id: number) => void;
+}
+
+export const EnhancedTableRows = ({ onToggleStatus, onDelete }: EnhancedTableRowsProps) => {
   const { vmList } = useZMyVMsList();
 
   return (
@@ -13,7 +18,13 @@ export const EnhancedTableRows = () => {
       }}
     >
       {vmList.map((row, index) => (
-        <RowVM key={`row-${index}-${row.idVM}`} vm={row} index={index} />
+        <RowVM
+          key={`row-${index}-${row.idVM}`}
+          vm={row}
+          index={index}
+          onToggleStatus={onToggleStatus}
+          onDelete={onDelete}
+        />
       ))}
     </TableBody>
   );

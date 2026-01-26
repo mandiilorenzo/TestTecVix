@@ -1,10 +1,11 @@
-import { user, vM } from "@prisma/client";
+import { user } from "@prisma/client";
 import { VMModel } from "../models/VMModel";
-import { TVMCreate, vMCreatedSchema } from "../types/validations/VM/createVM";
+import { vMCreatedSchema } from "../types/validations/VM/createVM";
+import { TVMUpdate } from "../types/validations/VM/updateVM";
 import { AppError } from "../errors/AppError";
 import { ERROR_MESSAGE } from "../constants/erroMessages";
 import { STATUS_CODE } from "../constants/statusCode";
-import { TVMUpdate, vMUpdatedSchema } from "../types/validations/VM/updateVM";
+import { vMUpdatedSchema } from "../types/validations/VM/updateVM";
 import { vmListAllSchema } from "../types/validations/VM/vmListAll";
 
 export class VMService {
@@ -18,16 +19,31 @@ export class VMService {
 
   async listAll(query: unknown, user: user) {
     const validQuery = vmListAllSchema.parse(query);
+
     return this.vMModel.listAll({
       query: validQuery,
+      idBrandMaster: Number(user.idBrandMaster),
     });
   }
 
   async createNewVM(data: unknown, user: user) {
+    if (user.role === "member") {
+      throw new AppError(
+        "Members are for reading only.",
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+
     const validateData = vMCreatedSchema.parse(data);
+    const brandToLink = validateData.idBrandMaster ?? user.idBrandMaster;
+
+    if (!brandToLink) {
+      throw new AppError("BrandMaster not provided", STATUS_CODE.BAD_REQUEST);
+    }
 
     const createdVM = await this.vMModel.createNewVM({
       ...validateData,
+      idBrandMaster: Number(brandToLink),
       status: "RUNNING",
     });
 
@@ -35,6 +51,13 @@ export class VMService {
   }
 
   async updateVM(idVM: number, data: unknown, user: user) {
+    if (user.role === "member") {
+      throw new AppError(
+        "Members cannot edit resources.",
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+
     const validateDataSchema = vMUpdatedSchema.parse(data);
     const oldVM = await this.getById(idVM);
 
@@ -42,16 +65,61 @@ export class VMService {
       throw new AppError(ERROR_MESSAGE.NOT_FOUND, STATUS_CODE.NOT_FOUND);
     }
 
+    if (user.role !== "admin" && oldVM.idBrandMaster !== user.idBrandMaster) {
+      throw new AppError(
+        "Unauthorized access to this VM.",
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+
     const updatedVM = await this.vMModel.updateVM(idVM, validateDataSchema);
     return updatedVM;
   }
 
   async deleteVM(idVM: number, user: user) {
+    if (user.role !== "admin") {
+      throw new AppError(
+        "Only admins can delete resources.",
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+
     const oldVM = await this.getById(idVM);
     if (!oldVM) {
       throw new AppError(ERROR_MESSAGE.NOT_FOUND, STATUS_CODE.NOT_FOUND);
     }
+
+    if (oldVM.idBrandMaster !== user.idBrandMaster) {
+      throw new AppError(
+        "Unauthorized access to this VM.",
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+
     const deletedVm = await this.vMModel.deleteVM(idVM);
     return deletedVm;
+  }
+
+  async changeStatus(idVM: number, status: "RUNNING" | "STOPPED", user: user) {
+    const oldVM = await this.getById(idVM);
+
+    if (!oldVM) {
+      throw new AppError(ERROR_MESSAGE.NOT_FOUND, STATUS_CODE.NOT_FOUND);
+    }
+
+    if (user.role !== "admin" && oldVM.idBrandMaster !== user.idBrandMaster) {
+      throw new AppError(
+        "Unauthorized access to this VM.",
+        STATUS_CODE.FORBIDDEN,
+      );
+    }
+
+    const data: TVMUpdate = {
+      status: status,
+    };
+
+    const updatedVM = await this.vMModel.updateVM(idVM, data);
+
+    return updatedVM;
   }
 }

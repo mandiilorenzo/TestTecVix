@@ -3,7 +3,7 @@ import { api } from "../services/api";
 import { IListAll } from "../types/ListAllTypes";
 import { toast } from "react-toastify";
 import { useAuth } from "./useAuth";
-import { IVMCreatedResponse } from "../types/VMTypes";
+import { IVMCreatedResponse, ICreateVMPayload } from "../types/VMTypes";
 
 export const useMyVMList = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,19 +15,22 @@ export const useMyVMList = () => {
       page?: number;
       limit?: number;
       search?: string;
-      orderBy?: string; // field_name:asc or field_name:desc
-      idBrandMaster?: number | "null";
+      orderBy?: string;
+      idBrandMaster?: number | "null" | null;
     } = {},
   ) => {
     const auth = await getAuth();
     setIsLoading(true);
+
+    const cleanParams = { ...params };
+    if (!cleanParams.status) delete cleanParams.status;
+    if (!cleanParams.search) delete cleanParams.search;
+    if (cleanParams.idBrandMaster === undefined) delete cleanParams.idBrandMaster;
+
     const response = await api.get<IListAll<IVMCreatedResponse>>({
       url: "/vm",
       auth,
-      params: {
-        ...params,
-        //status: "PAUSED", // "RUNNING", "STOPPED", "PAUSED", "null", undefined
-      },
+      params: cleanParams,
     });
 
     setIsLoading(false);
@@ -37,9 +40,74 @@ export const useMyVMList = () => {
     }
 
     const vmList = response.data?.result;
-    const totalCount = parseInt(response.data?.totalCount?.toString());
+    const totalCount = parseInt(response.data?.totalCount?.toString() || "0");
     return { totalCount, vmList };
   };
 
-  return { isLoading, fetchMyVmsList };
+  const toggleStatusVM = async (idVM: number, currentStatus: string) => {
+    const auth = await getAuth();
+    setIsLoading(true);
+    const action = currentStatus === "RUNNING" ? "stop" : "start";
+
+    const response = await api.post({
+      url: `/vm/${idVM}/${action}`,
+      auth,
+    });
+
+    setIsLoading(false);
+    if (response.error) {
+      toast.error(response.message || `Erro ao executar ${action}`);
+      return false;
+    }
+
+    toast.success(`VM ${action === "start" ? "iniciada" : "parada"} com sucesso!`);
+    return true;
+  };
+
+  const deleteVM = async (idVM: number) => {
+    const auth = await getAuth();
+    setIsLoading(true);
+
+    const response = await api.delete({
+      url: `/vm/${idVM}`,
+      auth,
+    });
+
+    setIsLoading(false);
+    if (response.error) {
+      toast.error(response.message || "Erro ao deletar VM");
+      return false;
+    }
+
+    toast.success("VM deletada com sucesso!");
+    return true;
+  };
+
+  const updateVM = async (idVM: number, data: Partial<ICreateVMPayload>) => {
+    const auth = await getAuth();
+    setIsLoading(true);
+
+    const response = await api.put({
+      url: `/vm/${idVM}`,
+      auth,
+      data,
+    });
+
+    setIsLoading(false);
+    if (response.error) {
+      toast.error(response.message || "Erro ao atualizar VM");
+      return false;
+    }
+
+    toast.success("VM atualizada com sucesso!");
+    return true;
+  };
+
+  return {
+    isLoading,
+    fetchMyVmsList,
+    toggleStatusVM,
+    deleteVM,
+    updateVM
+  };
 };

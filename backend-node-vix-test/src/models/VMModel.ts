@@ -2,7 +2,6 @@ import { prisma } from "../database/client";
 import { TVMCreate } from "../types/validations/VM/createVM";
 import { TVMUpdate } from "../types/validations/VM/updateVM";
 import { IListAllVM } from "../types/IListAll";
-import moment from "moment";
 
 export class VMModel {
   async getById(idVM: number) {
@@ -30,7 +29,10 @@ export class VMModel {
 
   async listAll({ query, idBrandMaster }: IListAllVM) {
     const limit = query.limit || 0;
-    const skip = query.page ? query.page * limit : query.offset || 0;
+    const skip =
+      query.page && query.page > 0
+        ? (query.page - 1) * limit
+        : query.offset || 0;
     const { status, idBrandMaster: idBrandMasterParams } = query;
     const orderBy =
       query.orderBy?.map(({ field, direction }) => ({

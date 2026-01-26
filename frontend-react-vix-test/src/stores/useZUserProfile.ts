@@ -40,7 +40,7 @@ interface IUserProfileState extends IUserProfile {
   }) => void;
   resetAll: () => void;
 }
-const middle = middlewareLocalStorage<IUserProfileState>("userProfile");
+const middle = middlewareLocalStorage<IUserProfileState>("@vituax-test:user-profile-v1");
 
 export const useZUserProfile = create<IUserProfileState>()(
   middle((set) => ({

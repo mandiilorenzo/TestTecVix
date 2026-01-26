@@ -1,20 +1,27 @@
 import { Stack } from "@mui/material";
-import { VmList } from "./VmList";
+import { VmList } from "./VmList"; 
 import { useZTheme } from "../../../../stores/useZTheme";
-import { HeaderVMList } from "./HeaderVMList";
+import { HeaderVMList } from "./HeaderVMList"; 
+import { IVMCreatedResponse } from "../../../../types/VMTypes";
 
-export const VmsCardsList = () => {
+interface VmsCardsListProps {
+  vmList: IVMCreatedResponse[];
+  isLoading: boolean;
+}
+
+export const VmsCardsList = ({ vmList, isLoading }: VmsCardsListProps) => {
   const { theme, mode } = useZTheme();
 
   return (
     <Stack
       sx={{
-        backgroundColor: theme[mode].light,
+        backgroundColor: theme[mode].light, 
         padding: "0px 8px",
         width: "100%",
       }}
     >
       <HeaderVMList />
+
       <Stack
         sx={{
           flexDirection: "row",
@@ -23,7 +30,7 @@ export const VmsCardsList = () => {
           justifyContent: "flex-start",
         }}
       >
-        <VmList />
+        <VmList vmList={vmList} isLoading={isLoading} />
       </Stack>
     </Stack>
   );

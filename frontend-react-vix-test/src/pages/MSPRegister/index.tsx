@@ -2,7 +2,6 @@ import { Box, Modal, Stack } from "@mui/material";
 import { ScreenFullPage } from "../../components/ScreenFullPage";
 import { TextRob20Font1MB } from "../../components/Text1MB";
 import { useZTheme } from "../../stores/useZTheme";
-import { SampleStepper } from "../../components/SampleStepper";
 import { useZMspRegisterPage } from "../../stores/useZMspRegisterPage";
 import { useTranslation } from "react-i18next";
 import { TextRob16Font1S } from "../../components/Text1S";
@@ -10,17 +9,17 @@ import { MspTableFilters } from "./MspTable/MspTableFilter";
 import { MspTable } from "./MspTable/MspTable";
 import { MspModal } from "./MspModal";
 import { ModalDeleteMsp } from "./ModalDeleteMsp";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ModalUSerNotCreated } from "./ModalUSerNotCreated";
 import { ModalDeleteVMsFromMSP } from "./ModalDeleteVMsFromMSP";
 import { useBrandMasterResources } from "../../hooks/useBrandMasterResources";
 import { AbsoluteBackDrop } from "../../components/AbsoluteBackDrop";
 import { useVmResource } from "../../hooks/useVmResource";
+import { MspRegisterForm } from "./components/MspRegisterForm"; 
 
 export const MSPRegisterPage = () => {
   const { theme, mode } = useZTheme();
   const {
-    activeStep,
     modalOpen,
     mspToBeDeleted,
     setModalOpen,
@@ -33,21 +32,21 @@ export const MSPRegisterPage = () => {
     setBrandMasterDeleted,
     setVmsToBeDeleted,
   } = useZMspRegisterPage();
+
   const { t } = useTranslation();
   const { isLoading } = useBrandMasterResources();
   const { isLoadingDeleteVM, deleteVM } = useVmResource();
   const [openModalUserNotCreated, setOpenModalUserNotCreated] = useState(false);
 
-  const resetAllStepStates = () => {
+  const resetAllStepStates = useCallback(() => {
     setIsEditing([]);
     setActiveStep(0);
     resetAll();
-  };
+  }, [setIsEditing, setActiveStep, resetAll]);
 
   const handleCancelAfterDeleteMSP = () => {
     setMspToBeDeleted(null);
     setModalOpen(null);
-    setMspToBeDeleted(null);
     setBrandMasterDeleted(null);
     setVmsToBeDeleted([]);
     resetAllStepStates();
@@ -62,124 +61,63 @@ export const MSPRegisterPage = () => {
     return () => {
       resetAllStepStates();
     };
-  }, []);
+  }, [resetAllStepStates]);
 
   return (
     <ScreenFullPage
       title={
-        <TextRob20Font1MB
-          sx={{
-            color: theme[mode].primary,
-            fontSize: "28px",
-            fontWeight: "500",
-            lineHeight: "40px",
-          }}
-        >
-          {t("mspRegister.title")}
-        </TextRob20Font1MB>
+        <Stack spacing={1.5} sx={{ marginTop: { xs: "24px", md: "40px" }, marginBottom: "32px" }}>
+          <TextRob20Font1MB sx={{ color: theme[mode].primary, fontSize: "28px", fontWeight: "500" }}>
+            {t("mspRegister.title", "Cadastro de MSPs")}
+          </TextRob20Font1MB>
+          <TextRob16Font1S sx={{ color: theme[mode].tertiary, fontSize: "14px" }}>
+            Gerencie as empresas e administradores parceiros
+          </TextRob16Font1S>
+        </Stack>
       }
-      sxTitleSubTitle={{
-        paddingLeft: "40px",
-        paddingRight: "40px",
-      }}
-      sxContainer={{
-        paddingLeft: "40px",
-        paddingRight: "40px",
-        paddingBottom: "40px",
-      }}
-      subtitle={
-        <Box
-          sx={{
-            maxWidth: "646px",
-            "@media (max-width: 660px)": { maxWidth: "136px" },
-          }}
-        >
-          <SampleStepper
-            activeStep={activeStep}
-            stepsNames={[
-              t("mspRegister.stepOneTitle"),
-              t("mspRegister.stepTwoTitle"),
-            ]}
-          />
-        </Box>
-      }
-      //  sx= estilização do componente pai
-      // children= elementos do componente
-      // className= estilização do componente
-      // isLoading= ativa um loaing na tela
-      // title= componente do titulo
-      // subtitle= componente do subtitulo
-      // keepSubtitle = false= mantem o subtitulo no caso de tela mobile ou pequena
-      // sxContainer= estilização do componente children
-      // sxTitleSubTitle= estilização do componente title e subtitle
+      sxTitleSubTitle={{ padding: { xs: "0 20px", md: "0 40px" } }}
+      sxContainer={{ padding: { xs: "0 20px 80px", md: "0 40px 40px" } }}
     >
-      {Boolean(isLoading || isLoadingDeleteVM) && <AbsoluteBackDrop open />}
-      <Stack
-        sx={{
-          width: "100%",
-          gap: "26px",
-          borderRadius: "16px",
-          boxSizing: "border-box",
-        }}
-      >
-        {
-          <Stack
-            sx={{
-              background: theme[mode].mainBackground,
-              borderRadius: "16px",
-              width: "100%",
-              padding: "24px",
-              boxSizing: "border-box",
-            }}
-          >
-            <Stack
-              sx={{
-                gap: "40px",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "24px",
-                }}
-              >
-                <TextRob16Font1S
-                  sx={{
-                    color: theme[mode].black,
-                    fontSize: "16px",
-                    fontWeight: 500,
-                    lineHeight: "24px",
-                  }}
-                >
-                  {t("mspRegister.tableTitle")}
-                </TextRob16Font1S>
-                <MspTableFilters />
-              </Box>
-              <MspTable />
-            </Stack>
-          </Stack>
-        }
+      {(isLoading || isLoadingDeleteVM) && <AbsoluteBackDrop open />}
+
+      <Stack sx={{ width: "100%", gap: "26px", maxWidth: "100%", overflow: "hidden" }}>
+
+        <MspRegisterForm />
+
+        <Stack
+          sx={{
+            background: theme[mode].mainBackground,
+            borderRadius: "16px",
+            width: "100%",
+            padding: { xs: "16px", md: "24px" },
+            boxSizing: "border-box",
+            gap: "24px"
+          }}
+        >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+            <TextRob16Font1S sx={{ color: theme[mode].black, fontWeight: 500, fontSize: "16px" }}>
+              {t("mspRegister.tableTitle", "MSPs Cadastradas")}
+            </TextRob16Font1S>
+
+            <MspTableFilters />
+          </Box>
+
+          <MspTable />
+        </Stack>
       </Stack>
+
       {modalOpen !== null && (
         <Modal
-          open={modalOpen !== null}
+          open={modalOpen !== null && modalOpen !== "registeringMsp"} 
           onClose={() => setModalOpen(null)}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <div>
+          <Box sx={{ width: '90%', maxWidth: '600px', outline: 'none' }}>
+
             {(modalOpen === "editedMsp" || modalOpen === "createdMsp") && (
-              <MspModal
-                modalType={modalOpen}
-                onClose={() => setModalOpen(null)}
-              />
+              <MspModal modalType={modalOpen} onClose={() => setModalOpen(null)} />
             )}
+
             {modalOpen === "deletedMsp" && mspToBeDeleted && (
               <ModalDeleteMsp
                 mspToDelete={mspToBeDeleted}
@@ -189,9 +127,10 @@ export const MSPRegisterPage = () => {
                 }}
               />
             )}
-          </div>
+          </Box>
         </Modal>
       )}
+
       {openModalUserNotCreated && (
         <ModalUSerNotCreated
           open={openModalUserNotCreated}
@@ -201,6 +140,7 @@ export const MSPRegisterPage = () => {
           }}
         />
       )}
+
       {Boolean(brandMasterDeleted) && (
         <ModalDeleteVMsFromMSP
           onClose={handleCancelAfterDeleteMSP}

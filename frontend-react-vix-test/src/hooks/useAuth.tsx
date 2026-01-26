@@ -10,14 +10,16 @@ export const useAuth = () => {
   const { loginTime, setLoginTime } = useZGlobalVar();
 
   const fetchNewUserToken = async () => {
-    if (!idUser) return "";
+    if (!idUser) return null; 
+
     const response = await api.get<{ token: string | null }>({
       url: `/user/token/${idUser}`,
-      auth: { Authorization: `Bearer ${token}` },
       tryRefetch: true,
     });
-    if (response.error || !response.data.token) {
-      return "";
+
+    if (response.error || !response.data?.token) {
+      console.error("[useAuth]: Erro ao recuperar novo token");
+      return null;
     }
 
     return response.data.token;
@@ -27,17 +29,26 @@ export const useAuth = () => {
     if (
       !force &&
       token &&
+      token !== "undefined" && 
       loginTime &&
       moment(loginTime).add(REFRESH_TIME, "minutes") > moment()
     ) {
       return { Authorization: `Bearer ${token}` };
     }
 
-    setLoginTime(new Date());
-
     const newToken = await fetchNewUserToken();
-    setUser({ token: newToken });
-    return { Authorization: `Bearer ${newToken || token}` };
+
+    if (newToken) {
+      setLoginTime(new Date());
+      setUser({ token: newToken });
+      return { Authorization: `Bearer ${newToken}` };
+    }
+
+    if (token && token !== "undefined") {
+      return { Authorization: `Bearer ${token}` };
+    }
+
+    return null;
   };
 
   return {

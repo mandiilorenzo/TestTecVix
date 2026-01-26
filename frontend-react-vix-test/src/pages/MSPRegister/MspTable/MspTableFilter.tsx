@@ -9,8 +9,14 @@ import { CheckboxLabel } from "../../../components/CheckboxLabel";
 export const MspTableFilters = () => {
   const { t } = useTranslation();
   const { theme, mode } = useZTheme();
-  const { mspTableFilter, setMspTableFilter, isPocFilter, setIsPocFilter } =
-    useZMspRegisterPage();
+
+  const {
+    mspTableFilter,
+    setMspTableFilter,
+    isPocFilter,
+    setIsPocFilter,
+  } = useZMspRegisterPage();
+
   return (
     <Box
       sx={{
@@ -26,6 +32,7 @@ export const MspTableFilters = () => {
         onChange={setMspTableFilter}
         placeholder={t("mspRegister.filterPlaceholder")}
       />
+
       <Stack sx={{ justifyContent: "center" }}>
         <CheckboxLabel
           label={t("mspRegister.showOnlyPoc")}

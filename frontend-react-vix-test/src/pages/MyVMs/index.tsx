@@ -13,6 +13,7 @@ import { useWindowSize } from "../../hooks/useWindowSize";
 import { SkeletonTable } from "./components/SkeletonTable";
 import { ModalEditVM } from "./components/ModalEditVM";
 import { AbsoluteBackDrop } from "../../components/AbsoluteBackDrop";
+import { ICreateVMPayload } from "../../types/VMTypes";
 
 export const MyVMsPage = () => {
   const {
@@ -34,42 +35,73 @@ export const MyVMsPage = () => {
     onlyMyVMs,
     selectedMSP,
   } = useZMyVMsList();
-  const { fetchMyVmsList, isLoading } = useMyVMList();
-  const { idBrand } = useZUserProfile();
+
+  const { fetchMyVmsList, isLoading, toggleStatusVM, deleteVM, updateVM } =
+    useMyVMList();
+
+  const { idBrand, role } = useZUserProfile();
   const { isOpenSideBar } = useZGlobalVar();
   const { width } = useWindowSize();
   const { updateThisVm, setUpdateThisVm } = useZGlobalVar();
   const { socketRef } = useZGlobalVar();
 
   const handlerFetchVMList = async (page: number = 0) => {
+    let targetBrand: number | null | undefined = idBrand;
+
+    if (role === "admin") {
+      if (onlyMyVMs) {
+        targetBrand = idBrand;
+      } else if (selectedMSP) {
+        targetBrand = Number(selectedMSP.idBrandMaster || selectedMSP);
+      } else {
+        targetBrand = null;
+      }
+    }
+
     const { totalCount, vmList } = await fetchMyVmsList({
       search,
       page: page || currentPage - 1 || 0,
       orderBy: orderBy ? `${orderBy}:${order}` : undefined,
       limit,
-      idBrandMaster: idBrand,
+      idBrandMaster: targetBrand,
       status,
     });
+
     setVMList(vmList);
     setTotalCount(totalCount);
     if (isFirstLoading) setIsFirstLoading(false);
   };
 
-  const onCloseAndEditVM = (edit: boolean) => {
-    if (edit) handlerFetchVMList();
-    setCurrentVM(null);
+  const handleToggleStatus = async (id: number, currentStatus: string) => {
+    const success = await toggleStatusVM(id, currentStatus);
+    if (success) handlerFetchVMList();
+  };
+
+  const handleDelete = async (id: number) => {
+    const success = await deleteVM(id);
+    if (success) handlerFetchVMList();
+  };
+
+  const handleUpdate = async (id: number, data: ICreateVMPayload) => {
+    const success = await updateVM(id, data);
+    if (success) {
+      handlerFetchVMList();
+      setCurrentVM(null);
+    }
   };
 
   useEffect(() => {
     if (isLoading) return;
     setCurrentPage(1);
     handlerFetchVMList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, order, orderBy, selectedMSP, status, onlyMyVMs]);
 
   useEffect(() => {
     if (isOpenSideBar) return;
     if (isLoading) return;
     handlerFetchVMList(currentPage - 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   useEffect(() => {
@@ -81,6 +113,7 @@ export const MyVMsPage = () => {
     if (vmToUpdate) {
       handlerFetchVMList();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateThisVm, isOpenSideBar, isLoading]);
 
   useEffect(() => {
@@ -91,16 +124,8 @@ export const MyVMsPage = () => {
     return () => {
       socketRef.off("updateTask");
     };
-  }, [
-    socketRef,
-    currentPage,
-    search,
-    order,
-    orderBy,
-    selectedMSP,
-    status,
-    onlyMyVMs,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socketRef, currentPage, search, order, orderBy, selectedMSP, status, onlyMyVMs]);
 
   return (
     <ScreenFullPage
@@ -115,28 +140,16 @@ export const MyVMsPage = () => {
           "@media (max-width: 659px)": { gap: "0" },
         }}
       >
-        {/* Mobile separator */}
         {width < 660 ? (
-          <Stack
-            sx={{
-              marginTop: "-24px",
-              width: "100%",
-              padding: "16px",
-            }}
-          >
+          <Stack sx={{ marginTop: "-24px", width: "100%", padding: "16px" }}>
             <Header />
           </Stack>
         ) : (
-          <Stack
-            sx={{
-              width: "100%",
-              padding: "0 24px",
-            }}
-          >
+          <Stack sx={{ width: "100%", padding: "0 24px" }}>
             <Header />
           </Stack>
         )}
-        {/* Main content */}
+
         {isFirstLoading ? (
           <SkeletonTable />
         ) : (
@@ -150,20 +163,15 @@ export const MyVMsPage = () => {
             }}
           >
             {isLoading && <AbsoluteBackDrop open={isLoading} />}
-            {/* Main table */}
-            <Stack
-              sx={{
-                width: "100%",
-              }}
-            >
-              <TableComponent />
+
+            <Stack sx={{ width: "100%" }}>
+              <TableComponent
+                onToggleStatus={handleToggleStatus}
+                onDelete={handleDelete}
+              />
             </Stack>
-            {/* pagination */}
-            <Stack
-              sx={{
-                width: "100%",
-              }}
-            >
+
+            <Stack sx={{ width: "100%" }}>
               <CustomPagination
                 currentPage={currentPage}
                 totalPages={totalCount}
@@ -173,8 +181,15 @@ export const MyVMsPage = () => {
             </Stack>
           </Stack>
         )}
+
         {Boolean(currentVM) && (
-          <ModalEditVM open={Boolean(currentVM)} onClose={onCloseAndEditVM} />
+          <ModalEditVM
+            open={Boolean(currentVM)}
+            onClose={() => setCurrentVM(null)}
+            onSave={(data) => handleUpdate(currentVM!.idVM, data)}
+            onDelete={() => handleDelete(currentVM!.idVM)} 
+            vmData={currentVM!}
+          />
         )}
       </Stack>
     </ScreenFullPage>

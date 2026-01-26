@@ -224,6 +224,24 @@
           ],
           "default": false
         },
+        "pass": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "BR_SAO_PAULO",
+            "US_N_VIRGINIA",
+            "US_WEST_OREGON",
+            "EU_FRANKFURT"
+          ]
+        },
         "status": {
           "type": [
             "string",

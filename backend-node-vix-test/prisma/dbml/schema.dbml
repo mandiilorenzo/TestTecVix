@@ -43,6 +43,8 @@ Table vM {
   ram Int [not null]
   disk Int [not null]
   hasBackup Boolean [default: false]
+  pass String
+  location ETaskLocation
   idBrandMaster Int
   status EVMStatus
   createdAt DateTime [default: `now()`]
@@ -78,6 +80,13 @@ Enum ERole {
   admin
   manager
   member
+}
+
+Enum ETaskLocation {
+  BR_SAO_PAULO
+  US_N_VIRGINIA
+  US_WEST_OREGON
+  EU_FRANKFURT
 }
 
 Ref: vM.idBrandMaster > brandMaster.idBrandMaster

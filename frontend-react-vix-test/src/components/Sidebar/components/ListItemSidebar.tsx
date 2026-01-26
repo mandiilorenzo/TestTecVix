@@ -93,8 +93,8 @@ export const ListItemSidebar = () => {
             },
             {
               text: t("sidebar.colaboratorRegister"),
-              path: "/colaborator-register",
-              isSelected: pathname === "/colaborator-register",
+              path: "/user-register",
+              isSelected: pathname === "/user-register",
               icon: (props) => <UserCheckDone {...props} />,
             },
           ]}

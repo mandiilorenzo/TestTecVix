@@ -2,15 +2,90 @@ openapi: 3.0.3
 info:
   title: API CLOUD
   version: 1.0.0
-  contact: {}
 servers:
-  - url: "{{url}}"
+  - url: http://localhost:3001
 paths:
+  /api/v1/users/me:
+    put:
+      tags:
+        - user
+      summary: Update current user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                email: { type: string }
+                fullName: { type: string }
+                phone: { type: string }
+      responses:
+        200:
+          description: Profile updated successfully
+        401:
+          description: Unauthorized
+
+  /api/v1/users/me/change-password:
+    put:
+      tags:
+        - user
+      summary: Update current user password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword: { type: string, minLength: 6 }
+      responses:
+        200:
+          description: Password updated successfully
+
+  # --- ROTAS DE BRANDMASTER (White Label) ---
+  /api/v1/brand-master/{id}:
+    put:
+      tags:
+        - brandMaster
+      summary: Update Brand (White Label settings)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                brandName: { type: string }
+                domain: { type: string }
+                brandLogo: { type: string, description: "Base64 image string" }
+      responses:
+        200:
+          description: Brand updated successfully
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT
+
 tags:
   - name: brandMaster
+    description: Management of MSPs and White Label
+  - name: user
+    description: User profile and authentication
   - name: VM
+    description: Virtual Machine management

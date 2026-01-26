@@ -16,9 +16,10 @@ export const PersonalInformation = () => {
   const { t } = useTranslation();
   const { theme, mode } = useZTheme();
   const { username, userEmail } = useZUserProfile();
+
   const {
     userEmail: userEmailForm,
-    userName,
+    userName: userNameForm,
     userPhone,
     password,
     confirmPassword,
@@ -68,24 +69,23 @@ export const PersonalInformation = () => {
         errorMessage: "",
       },
     });
-
     return true;
   };
 
   const validName = () => {
-    if (!userName.value) {
+    if (!userNameForm.value) {
       setFormProfileNotifications({
         userName: {
-          ...userName,
+          ...userNameForm,
           errorMessage: t("profileAndNotifications.requiredField"),
         },
       });
       return;
     }
-    if (userName.value.length < 4 || userName.value.length > 100) {
+    if (userNameForm.value.length < 4 || userNameForm.value.length > 100) {
       setFormProfileNotifications({
         userName: {
-          ...userName,
+          ...userNameForm,
           errorMessage: t("profileAndNotifications.invalidData"),
         },
       });
@@ -93,11 +93,10 @@ export const PersonalInformation = () => {
     }
     setFormProfileNotifications({
       userName: {
-        ...userName,
+        ...userNameForm,
         errorMessage: "",
       },
     });
-
     return true;
   };
 
@@ -111,19 +110,17 @@ export const PersonalInformation = () => {
       });
       return;
     }
-
     setFormProfileNotifications({
       password: {
         ...password,
         errorMessage: "",
       },
     });
-
     return true;
   };
 
   const validEmail = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex para validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!userEmailForm.value) {
       return setFormProfileNotifications({
         userEmail: {
@@ -132,7 +129,6 @@ export const PersonalInformation = () => {
         },
       });
     }
-
     if (
       !emailRegex.test(userEmailForm.value) ||
       userEmailForm.value.length > 100
@@ -144,8 +140,6 @@ export const PersonalInformation = () => {
         },
       });
     }
-
-    // Se o email for válido
     return setFormProfileNotifications({
       userEmail: {
         ...userEmailForm,
@@ -155,8 +149,7 @@ export const PersonalInformation = () => {
   };
 
   const validPhoneNumber = () => {
-    const phoneRegex = /^\d{10,11}$/; // Regex para validar telefone com 10 ou 11 dígitos
-
+    const phoneRegex = /^\d{10,11}$/;
     if (!userPhone.value) {
       return setFormProfileNotifications({
         userPhone: {
@@ -165,7 +158,6 @@ export const PersonalInformation = () => {
         },
       });
     }
-
     if (!phoneRegex.test(userPhone.value) || userPhone.value.length > 20) {
       return setFormProfileNotifications({
         userPhone: {
@@ -174,8 +166,6 @@ export const PersonalInformation = () => {
         },
       });
     }
-
-    // Se o telefone for válido
     return setFormProfileNotifications({
       userPhone: {
         ...userPhone,
@@ -200,11 +190,11 @@ export const PersonalInformation = () => {
     setFormProfileNotifications({
       fullNameForm: {
         ...fullNameForm,
-        value: "",
+        value: "", 
         errorMessage: "",
       },
       userName: {
-        ...userName,
+        ...userNameForm,
         value: username || "",
         errorMessage: "",
       },
@@ -215,11 +205,21 @@ export const PersonalInformation = () => {
       },
       userPhone: {
         ...userPhone,
+        value: "", 
+        errorMessage: "",
+      },
+      password: {
+        ...password,
+        value: "",
+        errorMessage: "",
+      },
+      confirmPassword: {
+        ...confirmPassword,
         value: "",
         errorMessage: "",
       },
     });
-  }, []);
+  }, [username, userEmail]);
 
   return (
     <Stack
@@ -227,7 +227,6 @@ export const PersonalInformation = () => {
         gap: "24px",
       }}
     >
-      {/* Title */}
       <Stack
         sx={{
           width: "100%",
@@ -243,11 +242,11 @@ export const PersonalInformation = () => {
           {t("profileAndNotifications.personalData")}
         </TextRob16FontL>
       </Stack>
-      {/* Inputs line 01 */}
       <Stack
         sx={{
           flexDirection: "row",
           gap: "24px",
+          flexWrap: "wrap",
           "@media (max-width: 745px)": {
             flexDirection: "column",
           },
@@ -275,13 +274,13 @@ export const PersonalInformation = () => {
         />
         <InputLabelAndFeedback
           label={t("profileAndNotifications.username")}
-          value={userName.value}
+          value={userNameForm.value}
           onChange={(val) => handleChange("userName", val)}
-          errorMessage={userName.errorMessage}
+          errorMessage={userNameForm.errorMessage}
           icon={
             <EditCirclePencilIcon
               fill={
-                userName.errorMessage
+                userNameForm.errorMessage
                   ? theme[mode].danger
                   : theme[mode].blueMedium
               }

@@ -43,6 +43,7 @@
   "mspDomain": "Dominio de MSP",
   "mspDomainPlaceholder": "tu-dominio.com",
   "domain": "Dominio",
+  "addMspButton": "Crear nuevo MSP",
   "editMspError": "Ocurrió un error al editar el MSP",
   "createdMsp": "¡MSP creado con éxito!",
   "editedMsp": "¡MSP editado con éxito!",

@@ -6,7 +6,12 @@ import { SortByParams, useZMyVMsList } from "../../../../stores/useZMyVMsList";
 import { EnhancedTableHead } from "./EnhancedTableHead";
 import { EnhancedTableRows } from "./EnhancedTableRows";
 
-export const TableComponent = () => {
+interface TableComponentProps {
+  onToggleStatus: (id: number, currentStatus: string) => void;
+  onDelete: (id: number) => void;
+}
+
+export const TableComponent = ({ onToggleStatus, onDelete }: TableComponentProps) => {
   const { totalCount, order, orderBy, setOrder, setOrderBy } = useZMyVMsList();
 
   const handleRequestSort = (
@@ -28,11 +33,14 @@ export const TableComponent = () => {
               numSelected={totalCount}
               order={order}
               orderBy={orderBy}
-              onSelectAllClick={() => {}}
+              onSelectAllClick={() => { }}
               onRequestSort={handleRequestSort}
               rowCount={totalCount}
             />
-            <EnhancedTableRows />
+            <EnhancedTableRows
+              onToggleStatus={onToggleStatus}
+              onDelete={onDelete}
+            />
           </Table>
         </TableContainer>
       </Paper>

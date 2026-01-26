@@ -23,7 +23,11 @@ export const HomePage = () => {
   const [selectedChart, setSelectedChart] = useState<
     "main" | "top" | "bottom" | null
   >(null);
+
   const { vmList, isLoading } = useListVms();
+  console.log(vmList);
+  
+  const showDashboard = isLoading || (vmList && vmList.length > 0);
 
   return (
     <Screen
@@ -34,7 +38,6 @@ export const HomePage = () => {
         },
       }}
     >
-      {/* Main */}
       <Stack
         flexDirection={"row"}
         className="h-full"
@@ -43,9 +46,7 @@ export const HomePage = () => {
           backgroundColor: theme[mode].light,
         }}
       >
-        {/* Sidebar */}
         <Sidebar />
-        {/* main home */}
         <Stack
           width={"100%"}
           sx={{
@@ -65,7 +66,7 @@ export const HomePage = () => {
               },
             }}
           >
-            {!isLoading && (!vmList || vmList.length === 0) ? (
+            {!showDashboard ? (
               <WelcomeCards />
             ) : (
               <Stack
@@ -77,82 +78,78 @@ export const HomePage = () => {
                 }}
               >
                 <>
-                  <VmsCardsList />
-                  {/* Maps container */}
-                  {Boolean(totalCountVMs) && (
+                  <VmsCardsList vmList={vmList} isLoading={isLoading} />
+
+                  <Stack
+                    sx={{
+                      height: "100%",
+                      minHeight: "300px",
+                      flexDirection: "row",
+                      gap: "12px",
+                      padding: "0px 32px",
+                      paddingBottom: "8px",
+                      display: totalCountVMs > 0 ? "flex" : "none",
+                      "@media (max-width: 865px)": {
+                        flexDirection: "column",
+                        maxHeight: "unset",
+                      },
+                    }}
+                  >
                     <Stack
                       sx={{
+                        position: "relative",
+                        overflow: "hidden",
+                        width: "50%",
                         height: "100%",
-                        minHeight: "300px",
-                        flexDirection: "row",
-                        gap: "12px",
-                        padding: "0px 32px",
-                        paddingBottom: "8px",
+                        borderRadius: "16px",
+                        boxShadow: `0px 4px 4px 0px ${shadow(mode)}`,
+                        padding: "16px",
+                        paddingTop: "24px",
+                        backgroundColor: theme[mode].mainBackground,
                         "@media (max-width: 865px)": {
                           flexDirection: "column",
-                          maxHeight: "unset",
+                          width: "100%",
+                          minHeight: "325px",
                         },
                       }}
                     >
-                      {/* Main map */}
+                      <ExpandButton
+                        onClick={() => setSelectedChart("main")}
+                      />
+                      <MainGraphic />
+                    </Stack>
+                    <Stack
+                      sx={{
+                        width: "50%",
+                        height: "100%",
+                        gap: "12px",
+                        "@media (max-width: 865px)": {
+                          width: "100%",
+                          minHeight: "425px",
+                        },
+                      }}
+                    >
                       <Stack
                         sx={{
                           position: "relative",
-                          overflow: "hidden",
-                          width: "50%",
-                          height: "100%",
                           borderRadius: "16px",
                           boxShadow: `0px 4px 4px 0px ${shadow(mode)}`,
-                          padding: "16px",
-                          paddingTop: "24px",
+                          height: "100%",
                           backgroundColor: theme[mode].mainBackground,
-                          "@media (max-width: 865px)": {
-                            flexDirection: "column",
-                            width: "100%",
-                            minHeight: "325px",
-                          },
+                          padding: "8px",
+                          paddingTop: "16px",
                         }}
                       >
                         <ExpandButton
-                          onClick={() => setSelectedChart("main")}
-                        />
-                        <MainGraphic />
-                      </Stack>
-                      {/* Seconds Maps */}
-                      <Stack
-                        sx={{
-                          width: "50%",
-                          height: "100%",
-                          gap: "12px",
-                          "@media (max-width: 865px)": {
-                            width: "100%",
-                            minHeight: "425px",
-                          },
-                        }}
-                      >
-                        {/* Memory map */}
-                        <Stack
                           sx={{
-                            position: "relative",
-                            borderRadius: "16px",
-                            boxShadow: `0px 4px 4px 0px ${shadow(mode)}`,
-                            height: "100%",
-                            backgroundColor: theme[mode].mainBackground,
-                            padding: "8px",
-                            paddingTop: "16px",
+                            zIndex: 100,
                           }}
-                        >
-                          <ExpandButton
-                            sx={{
-                              zIndex: 100,
-                            }}
-                            onClick={() => setSelectedChart("bottom")}
-                          />
-                          <BottomGraphic />
-                        </Stack>
+                          onClick={() => setSelectedChart("bottom")}
+                        />
+                        <BottomGraphic />
                       </Stack>
                     </Stack>
-                  )}
+                  </Stack>
                 </>
               </Stack>
             )}

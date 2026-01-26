@@ -1,16 +1,30 @@
-import jwt, { TokenExpiredError } from "jsonwebtoken";
-// import { AppError } from "../errors/AppError";
+import jwt, { SignOptions } from "jsonwebtoken";
+import { AppError } from "../errors/AppError";
+import { IPayload } from "../types/auth";
 
-const secret = process.env.JWT_SECRET;
+const secret = process.env.JWT_SECRET as string;
 
-interface IPayload {}
+const jwtConfig: SignOptions = {
+  expiresIn: "1d",
+  algorithm: "HS256",
+};
 
-export const genToken = (payload: IPayload) => {};
+export const genToken = (payload: IPayload): string => {
+  if (!secret) {
+    throw new AppError("JWT_SECRET not defined in environment variables", 500);
+  }
+  return jwt.sign(payload, secret, jwtConfig);
+};
 
-export const verifyToken = (token: string) => {
+export const verifyToken = (token: string): IPayload => {
+  if (!secret) {
+    throw new AppError("JWT_SECRET not defined in environment variables", 500);
+  }
+
   try {
-    return; // data;
-  } catch (error) {
-    // throws new AppError(ERROR_MESSAGE.INVALID_TOKEN, STATUS_CODE.UNAUTHORIZED);
+    const decoded = jwt.verify(token, secret);
+    return decoded as IPayload;
+  } catch {
+    throw new AppError("Token inválido ou expirado", 401);
   }
 };

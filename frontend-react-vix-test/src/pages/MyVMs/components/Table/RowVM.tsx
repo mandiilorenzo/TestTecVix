@@ -24,19 +24,28 @@ import { ModalStartVM } from "../ModalStartVM";
 import { ModalStopVM } from "../ModalStopVM";
 import { useStatusInfo } from "../../../../hooks/useStatusInfo";
 
+// ✅ 1. Interface atualizada para receber as ações
 interface IProps {
   vm: IVMCreatedResponse;
   index: number;
+  onToggleStatus: (id: number, status: string) => void;
+  onDelete: (id: number) => void;
 }
 
-export const RowVM = ({ vm, index }: IProps) => {
+// ✅ 2. Recebendo as props
+export const RowVM = ({ vm, index, onToggleStatus }: IProps) => {
   const { mode, theme } = useZTheme();
   const [row, setRow] = React.useState<IVMCreatedResponse>(vm);
+
+  // Controle dos Modais de Confirmação
   const [vmIDToStop, setVmIDToStop] = React.useState<number>(0);
   const [vmIDToStart, setVmIDToStart] = React.useState<number>(0);
+
   const { currentVM, setCurrentVM } = useZMyVMsList();
   const { getStatus } = useStatusInfo();
-  const { getOS, getVMById, isLoading: isLoadingVm } = useVmResource();
+
+  // useVmResource mantido apenas para utilitários (getOS), removemos getVMById para usar a prop do pai
+  const { getOS, isLoading: isLoadingVm } = useVmResource();
 
   const idVM: number = Number(row.idVM);
   const labelId = `enhanced-table-checkbox-${index}`;
@@ -48,11 +57,17 @@ export const RowVM = ({ vm, index }: IProps) => {
     setCurrentVM(newVMCurrent);
   };
 
+  // ✅ 3. Lógica Conectada: Start/Stop chama a função do Pai
   const handleConfirVMStatusChange = async () => {
-    const updatedVM = await getVMById(vmIDToStop || vmIDToStart);
-    if (updatedVM) {
-      setRow(updatedVM);
+    // Identifica qual ação está sendo executada pelo ID que está setado
+    const targetId = vmIDToStop || vmIDToStart;
+
+    if (targetId) {
+      // Chama a função passada via props que vai na API e recarrega a lista
+      await onToggleStatus(targetId, row.status);
     }
+
+    // Fecha os modais
     setVmIDToStop(0);
     setVmIDToStart(0);
   };
@@ -198,7 +213,7 @@ export const RowVM = ({ vm, index }: IProps) => {
               {getOS({ osValue: row.os }).hasTerminal && (
                 <Btn
                   disabled={isLoading || !getStatus(row).isRunning}
-                  onClick={() => {}}
+                  onClick={() => { }}
                   sx={{
                     width: "40px",
                     height: "27px",
@@ -228,7 +243,7 @@ export const RowVM = ({ vm, index }: IProps) => {
               {getOS({ osValue: row.os }).hasMonitor && (
                 <Btn
                   disabled={isLoading || !getStatus(row).isRunning}
-                  onClick={() => {}}
+                  onClick={() => { }}
                   sx={{
                     width: "40px",
                     height: "27px",
@@ -380,10 +395,11 @@ export const RowVM = ({ vm, index }: IProps) => {
               },
             }}
           >
+            {/* Botão STOP */}
             {getStatus(row).isRunning && (
               <IconButton
                 disabled={row.status === "STOPPED" || row.status === null}
-                onClick={() => setVmIDToStop(row.idVM)}
+                onClick={() => setVmIDToStop(row.idVM)} // Abre o Modal
                 sx={{
                   gap: "8px",
                   ":hover": { opacity: 0.8 },
@@ -393,10 +409,12 @@ export const RowVM = ({ vm, index }: IProps) => {
                 <StopCircleIcon fill={theme[mode].lightRed} />
               </IconButton>
             )}
+
+            {/* Botão START */}
             {getStatus(row).isStopped && (
               <IconButton
                 disabled={row.status === "RUNNING" || row.status === null}
-                onClick={() => setVmIDToStart(row.idVM)}
+                onClick={() => setVmIDToStart(row.idVM)} // Abre o Modal
                 sx={{
                   gap: "8px",
                   ":hover": { opacity: 0.8 },
@@ -406,6 +424,8 @@ export const RowVM = ({ vm, index }: IProps) => {
                 <PlayCircleIcon fill={theme[mode].greenLight} />
               </IconButton>
             )}
+
+            {/* Botão EDITAR */}
             <Btn
               onClick={() => handleClick(row)}
               sx={{
@@ -418,6 +438,8 @@ export const RowVM = ({ vm, index }: IProps) => {
         </TableCell>
       </TableRow>
 
+      {/* MODALS DE CONFIRMAÇÃO */}
+      {/* Eles chamam handleConfirVMStatusChange ao confirmar */}
       {Boolean(vmIDToStart) && (
         <ModalStartVM
           vmName={row.vmName}

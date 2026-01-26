@@ -8,10 +8,58 @@ import {
 import { AppError } from "../errors/AppError";
 import { ERROR_MESSAGE } from "../constants/erroMessages";
 import { STATUS_CODE } from "../constants/statusCode";
+import fs from "fs";
+import path from "path";
+import { API_VERSION } from "../constants/basePathRoutes";
 
 export class BrandMasterService {
-  constructor() { }
+  constructor() {}
   private brandMasterModel = new BrandMasterModel();
+
+  private async saveBase64Image(base64String: string): Promise<string> {
+    if (
+      !base64String ||
+      typeof base64String !== "string" ||
+      !base64String.startsWith("data:image")
+    ) {
+      return base64String;
+    }
+
+    try {
+      const matches = base64String.match(
+        /^data:image\/([a-zA-Z0-9]+);base64,(.+)$/,
+      );
+
+      if (!matches || matches.length !== 3) {
+        return base64String;
+      }
+
+      const extension = matches[1];
+      const data = matches[2];
+      const buffer = Buffer.from(data, "base64");
+      const uploadDir = path.resolve(__dirname, "..", "..", "uploads");
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const fileName = `${Date.now()}-logo.${extension}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      await fs.promises.writeFile(filePath, buffer);
+
+      const baseUrl = process.env.BASE_URL_FILES || "http://localhost:3001";
+      const apiVersion = API_VERSION?.MAIN || "/api/v1";
+
+      return `${baseUrl}${apiVersion}/uploads/${fileName}`;
+    } catch (error) {
+      console.error("Erro ao processar imagem Base64:", error);
+      throw new AppError(
+        "Erro ao processar imagem de logo",
+        STATUS_CODE.SERVER_ERROR,
+      );
+    }
+  }
 
   async getSelf(domain: string) {
     return await this.brandMasterModel.getSelf(domain);
@@ -26,7 +74,11 @@ export class BrandMasterService {
     return this.brandMasterModel.listAll(validQuery);
   }
 
-  async createNewBrandMaster(data: TBrandMaster, user: user) {
+  async createNewBrandMaster(data: TBrandMaster, _user: user) {
+    if (data.brandLogo) {
+      data.brandLogo = await this.saveBase64Image(data.brandLogo);
+    }
+
     const validData = brandMasterSchema.parse(data);
 
     if (validData.contract) {
@@ -37,17 +89,13 @@ export class BrandMasterService {
       validData.pocOpenedAt = new Date();
     }
 
-    const newBrandMaster =
-      await this.brandMasterModel.createNewBrandMaster(validData);
-
-    return newBrandMaster;
+    return await this.brandMasterModel.createNewBrandMaster(validData);
   }
 
   private async update({
     validData,
     idBrandMaster,
   }: {
-    user: user;
     validData: TBrandMaster;
     idBrandMaster: number;
     oldBrandMaster: brandMaster;
@@ -58,12 +106,18 @@ export class BrandMasterService {
     );
   }
 
-  async updateBrandMaster(idBrandMaster: number, data: unknown, user: user) {
-    if (user.idBrandMaster && user.idBrandMaster !== idBrandMaster) {
-      throw new AppError(ERROR_MESSAGE.UNAUTHORIZED, STATUS_CODE.UNAUTHORIZED);
+  async updateBrandMaster(
+    idBrandMaster: number,
+    data: TBrandMaster,
+    _user: user,
+  ) {
+    if (data.brandLogo) {
+      data.brandLogo = await this.saveBase64Image(data.brandLogo);
     }
+
     const validData = brandMasterSchema.parse(data);
     const oldBrandMaster = await this.brandMasterModel.getById(idBrandMaster);
+
     if (!oldBrandMaster) {
       throw new AppError(
         ERROR_MESSAGE.BRAND_MASTER_NOT_FOUND,
@@ -88,14 +142,13 @@ export class BrandMasterService {
     }
 
     return this.update({
-      user,
       validData,
       idBrandMaster,
       oldBrandMaster,
     });
   }
 
-  async deleteBrandMaster(idBrandMaster: number, user: user) {
+  async deleteBrandMaster(idBrandMaster: number, _user: user) {
     const oldBrandMaster = await this.brandMasterModel.getById(idBrandMaster);
     if (!oldBrandMaster) {
       throw new AppError(

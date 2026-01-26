@@ -26,13 +26,18 @@ interface IMspRegisterPage {
   mspDomain: string;
   mspList: INewMSPResponse[];
   isEditing: number[];
-  modalOpen: null | "editedMsp" | "createdMsp" | "deletedMsp";
+  modalOpen:
+    | null
+    | "editedMsp"
+    | "createdMsp"
+    | "deletedMsp"
+    | "registeringMsp";
   mspToBeDeleted?: INewMSPResponse | null;
   mspTableFilter: string;
   brandLogoUrl: string;
   brandObjectName: string;
-  cityCode: string;
-  district: string;
+  cityCode: string; 
+  district: string; 
   alertMessage: string | null;
   enterOnEditing: boolean;
   showCnpjError: boolean;
@@ -87,15 +92,11 @@ const INIT_STATE: IMspRegisterPage = {
   notesBrandMasterDescription: "",
 };
 
-const {
-  activeStep: _activeStep,
-  mspList: _mspList,
-  isEditing: _isEditing,
-  ...resetState
-} = INIT_STATE;
-void _activeStep;
-void _mspList;
-void _isEditing;
+const resetState = Object.fromEntries(
+  Object.entries(INIT_STATE).filter(
+    ([key]) => !["activeStep", "mspList", "isEditing"].includes(key),
+  ),
+);
 
 interface IMspRegisterPageState extends IMspRegisterPage {
   setActiveStep: (activeStep: 0 | 1) => void;
@@ -121,15 +122,10 @@ interface IMspRegisterPageState extends IMspRegisterPage {
   resetAll: () => void;
   setMspList: (mspList: INewMSPResponse[]) => void;
   setIsEditing: (isEditing: number[]) => void;
-  setModalOpen: (
-    modalOpen: null | "editedMsp" | "createdMsp" | "deletedMsp",
-  ) => void;
+  setModalOpen: (modalOpen: IMspRegisterPage["modalOpen"]) => void;
   setMspToBeDeleted: (mspToBeDeleted: INewMSPResponse | null) => void;
   setMspTableFilter: (mspTableFilter: string) => void;
-  setBrandLogo: ({
-    brandLogoUrl,
-    brandObjectName,
-  }: {
+  setBrandLogo: (params: {
     brandLogoUrl: string;
     brandObjectName: string;
   }) => void;
@@ -151,71 +147,46 @@ interface IMspRegisterPageState extends IMspRegisterPage {
 
 export const useZMspRegisterPage = create<IMspRegisterPageState>((set) => ({
   ...INIT_STATE,
-  setActiveStep: (activeStep: 0 | 1) =>
-    set((state) => ({ ...state, activeStep })),
-  setCompanyName: (companyName: string) =>
-    set((state) => ({ ...state, companyName })),
-  setCnpj: (cnpj: string) => set((state) => ({ ...state, cnpj })),
-  setPhone: (phone: string) => set((state) => ({ ...state, phone })),
-  setSector: (sector: string) => set((state) => ({ ...state, sector })),
-  setContactEmail: (contactEmail: string) =>
-    set((state) => ({ ...state, contactEmail })),
-  setCep: (cep: string) => set((state) => ({ ...state, cep })),
-  setLocality: (locality: string) => set((state) => ({ ...state, locality })),
-  setCountryState: (countryState: string) =>
-    set((state) => ({ ...state, countryState })),
-  setCity: (city: string) => set((state) => ({ ...state, city })),
-  setStreet: (street: string) => set((state) => ({ ...state, street })),
-  setStreetNumber: (streetNumber: string) =>
-    set((state) => ({ ...state, streetNumber })),
-  setAdmName: (admName: string) => set((state) => ({ ...state, admName })),
-  setAdmEmail: (admEmail: string) => set((state) => ({ ...state, admEmail })),
-  setAdmPhone: (admPhone: string) => set((state) => ({ ...state, admPhone })),
-  setPosition: (position: string) => set((state) => ({ ...state, position })),
-  setMSPDomain: (domain: string) =>
-    set((state) => ({ ...state, mspDomain: domain })),
-  setAdmPassword: (admPassword: string) =>
-    set((state) => ({ ...state, admPassword })),
-  setShowError: (showError: boolean) =>
-    set((state) => ({ ...state, showError })),
-  setShowErrorPageTwo: (showErrorPageTwo: boolean) =>
-    set((state) => ({ ...state, showErrorPageTwo })),
+  setActiveStep: (activeStep) => set({ activeStep }),
+  setCompanyName: (companyName) => set({ companyName }),
+  setCnpj: (cnpj) => set({ cnpj }),
+  setPhone: (phone) => set({ phone }),
+  setSector: (sector) => set({ sector }),
+  setContactEmail: (contactEmail) => set({ contactEmail }),
+  setCep: (cep) => set({ cep }),
+  setLocality: (locality) => set({ locality }),
+  setCountryState: (countryState) => set({ countryState }),
+  setCity: (city) => set({ city }),
+  setStreet: (street) => set({ street }),
+  setStreetNumber: (streetNumber) => set({ streetNumber }),
+  setAdmName: (admName) => set({ admName }),
+  setAdmEmail: (admEmail) => set({ admEmail }),
+  setAdmPhone: (admPhone) => set({ admPhone }),
+  setPosition: (position) => set({ position }),
+  setMSPDomain: (mspDomain) => set({ mspDomain }),
+  setAdmPassword: (admPassword) => set({ admPassword }),
+  setShowError: (showError) => set({ showError }),
+  setShowErrorPageTwo: (showErrorPageTwo) => set({ showErrorPageTwo }),
   resetAll: () => set((state) => ({ ...state, ...resetState })),
-  setMspList: (mspList: INewMSPResponse[]) =>
-    set((state) => ({ ...state, mspList: [...mspList] })),
-  setIsEditing: (isEditing: number[]) =>
-    set((state) => ({ ...state, isEditing: [...isEditing] })),
-  setModalOpen: (modalOpen: null | "editedMsp" | "createdMsp" | "deletedMsp") =>
-    set((state) => ({ ...state, modalOpen })),
-  setMspToBeDeleted: (mspToBeDeleted: INewMSPResponse | null) =>
-    set((state) => ({ ...state, mspToBeDeleted })),
-  setMspTableFilter: (mspTableFilter: string) =>
-    set((state) => ({ ...state, mspTableFilter })),
+  setMspList: (mspList) => set({ mspList: [...mspList] }),
+  setIsEditing: (isEditing) => set({ isEditing: [...isEditing] }),
+  setModalOpen: (modalOpen) => set({ modalOpen }),
+  setMspToBeDeleted: (mspToBeDeleted) => set({ mspToBeDeleted }),
+  setMspTableFilter: (mspTableFilter) => set({ mspTableFilter }),
   setBrandLogo: ({ brandLogoUrl, brandObjectName }) =>
-    set((state) => ({ ...state, brandLogoUrl, brandObjectName })),
-  setCityCode: (cityCode: string) => set((state) => ({ ...state, cityCode })),
-  setDistrict: (district: string) => set((state) => ({ ...state, district })),
-  setAlertMessage: (alertMessage: string | null) =>
-    set((state) => ({ ...state, alertMessage })),
-  setEnterOnEditing: (enterOnEditing: boolean) =>
-    set((state) => ({ ...state, enterOnEditing })),
-  setShowCnpjError: (showCnpjError: boolean) =>
-    set((state) => ({ ...state, showCnpjError })),
-  setShowCepError: (showCepError: boolean) =>
-    set((state) => ({ ...state, showCepError })),
-  setShowAddressFields: (showAddressFields: boolean) =>
-    set((state) => ({ ...state, showAddressFields })),
-  setIsPoc: (isPoc: boolean) => set((state) => ({ ...state, isPoc })),
-  setIsPocFilter: (isPocFilter: boolean) =>
-    set((state) => ({ ...state, isPocFilter })),
-  setBrandMasterDeleted: (brandMasterDeleted: IBrandMasterBasicInfo | null) =>
-    set((state) => ({ ...state, brandMasterDeleted })),
-  setVmsToBeDeleted: (vmsToBeDeleted: IVMCreatedResponse[]) =>
-    set((state) => ({ ...state, vmsToBeDeleted })),
-  setNotesBrandMasterDescription(notesBrandMasterDescription: string) {
-    set((state) => ({
-      ...state,
-      notesBrandMasterDescription,
-    }));
-  },
+    set({ brandLogoUrl, brandObjectName }),
+  setCityCode: (cityCode) => set({ cityCode }),
+  setDistrict: (district) => set({ district }),
+  setAlertMessage: (alertMessage) => set({ alertMessage }),
+  setEnterOnEditing: (enterOnEditing) => set({ enterOnEditing }),
+  setShowCnpjError: (showCnpjError) => set({ showCnpjError }),
+  setShowCepError: (showCepError) => set({ showCepError }),
+  setShowAddressFields: (showAddressFields) => set({ showAddressFields }),
+  setIsPoc: (isPoc) => set({ isPoc }),
+  setIsPocFilter: (isPocFilter) => set({ isPocFilter }),
+  setBrandMasterDeleted: (brandMasterDeleted) => set({ brandMasterDeleted }),
+  setVmsToBeDeleted: (vmsToBeDeleted) =>
+    set({ vmsToBeDeleted: [...vmsToBeDeleted] }),
+  setNotesBrandMasterDescription: (notesBrandMasterDescription) =>
+    set({ notesBrandMasterDescription }),
 }));

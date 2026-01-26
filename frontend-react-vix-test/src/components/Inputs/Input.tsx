@@ -1,70 +1,82 @@
-import { FormControl, SxProps, TextField } from "@mui/material";
-import { useRefFocusEffectDelayed } from "../../hooks/useRefFocusEffectDelayed";
+import { FormControl, SxProps, TextField, InputAdornment, Typography } from "@mui/material";
+import { PencilCicleIcon } from "../../icons/PencilCicleIcon";
+import { useZTheme } from "../../stores/useZTheme";
 
 export interface IPropsLabelInput {
   label?: string;
   placeholder?: string;
   containerSx?: SxProps;
   type?: string;
-  labelSx?: SxProps;
-  sx?: SxProps;
   value?: string | number;
-  hasFocusEffect?: boolean;
   onChange?: (value: string) => void;
-  className?: string;
+  disabled?: boolean;
+  error?: string;
+  showEditIcon?: boolean;
+  sx?: SxProps;
 }
 
 export const InputLabel = ({
   label = "",
   placeholder = "",
   type = "text",
-  hasFocusEffect = true,
-  onChange = () => {},
+  onChange = () => { },
   value = "",
   containerSx = {},
+  disabled = false,
+  error = "",
+  showEditIcon = false,
   sx = {},
-  className = "",
 }: IPropsLabelInput) => {
-  const { inputRef } = useRefFocusEffectDelayed();
+  const { theme, mode } = useZTheme();
 
   return (
-    <FormControl
-      className={className}
-      sx={{
-        alignItems: "center",
-        width: "100%",
-        ...containerSx,
-      }}
-    >
+    <FormControl sx={{ width: "100%", ...containerSx }}>
+      {label && (
+        <Typography sx={{ color: theme[mode].primary, mb: 0.5, fontSize: "14px" }}>
+          {label}
+        </Typography>
+      )}
       <TextField
-        {...(hasFocusEffect && { inputRef })}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         type={type}
+        disabled={disabled}
+        placeholder={placeholder}
+        error={!!error}
+        helperText={error}
+        InputProps={{
+          endAdornment: showEditIcon ? (
+            <InputAdornment position="end">
+              <PencilCicleIcon
+                fill={theme[mode].blueMedium}
+                style={{ cursor: 'pointer', width: '20px' }}
+              />
+            </InputAdornment>
+          ) : undefined,
+        }}
         sx={{
           width: "100%",
-          backgroundColor: "#FAFAFA",
+          backgroundColor: theme[mode].mainBackground,
+          borderRadius: "8px",
           "& .MuiOutlinedInput-root": {
-            "& fieldset": {
-              border: "none",
-            },
-            "&:hover fieldset": {
-              border: "none",
+            "& fieldset": { border: "none" },
+            "& .MuiInputBase-input::placeholder": {
+              color: theme[mode].tertiary,
+              opacity: 1,
             },
             "&.Mui-focused fieldset": {
-              border: "none",
+              border: "1px solid",
+              borderColor: theme[mode].blue
             },
           },
-          ".MuiInputBase-input": {
-            padding: "4px 8px",
-            paddingLeft: "16px",
-            height: "32px",
+          "& .MuiInputBase-input": { padding: "10px 14px" },
+          "& .MuiFormHelperText-root": {
+            color: theme[mode].danger,
+            fontSize: "12px",
+            margin: "4px 2px",
           },
           ...sx,
         }}
-        id={`outlined-adornment-${label}`}
-        placeholder={placeholder}
-        aria-describedby={`outlined-${label}-helper-text`}
       />
     </FormControl>
   );

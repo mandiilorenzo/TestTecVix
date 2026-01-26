@@ -1,10 +1,9 @@
 import { Box, Button, Divider, IconButton, Stack } from "@mui/material";
 import { useZTheme } from "../../../../stores/useZTheme";
 import { useTranslation } from "react-i18next";
-
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; 
 import { shadow } from "../../../../utils/shadow";
 import { makeEllipsis } from "../../../../utils/makeEllipsis";
 import { TextRob20Font1MC } from "../../../../components/Text1MC";
@@ -26,6 +25,7 @@ import { TextRob14Font1Xs } from "../../../../components/Text1Xs";
 import { TerminalIcon } from "../../../../icons/TerminalIcon";
 import { MonitorIcon } from "../../../../icons/MonitorIcon";
 import { IVMTask, taskMock } from "../../../../types/VMTypes";
+import { useMyVMList } from "../../../../hooks/useMyVMList";
 
 export interface IVmCardProps {
   vmId: number;
@@ -53,6 +53,7 @@ export const VmCard = ({
 }: IVmCardProps) => {
   const { mode, theme } = useZTheme();
   const { t } = useTranslation();
+
   const [vmNameState, setVmNameState] = useState<string | number>(vmName);
   const [cpuState, setCpuState] = useState<number | string>(cpu);
   const [memoryState, setMemoryState] = useState<number | string>(memory);
@@ -60,12 +61,15 @@ export const VmCard = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [statusState, setStatusState] = useState(status);
   const [preStatusState, setPreStatusState] = useState<string | null>(status);
+
   const [openModal, setOpenModal] = useState(false);
   const [openModalSlider, setOpenModalSlider] = useState(false);
   const [openModalWarning, setOpenModalWarning] = useState(false);
   const [preDisk, setPreDisk] = useState<number | string>(0);
   const [taskState, setTaskState] = useState(task);
+
   const { ref, position } = useSelfPosition(openModalSlider);
+  const { toggleStatusVM } = useMyVMList(); 
   const {
     updateThisVm,
     setUpdateThisVm,
@@ -82,9 +86,10 @@ export const VmCard = ({
     getOS,
   } = useVmResource();
 
-  const getVMById = async () => {
+  const getVMById = useCallback(async () => {
     const vm = await getVMByIdResource(vmId);
     if (!vm) return setUpdateThisVm(null);
+
     setVmNameState(vm.vmName);
     setCpuState(vm.vCPU);
     setMemoryState(vm.ram);
@@ -99,7 +104,7 @@ export const VmCard = ({
     setOpenModalSlider(false);
     setOpenModal(false);
     setUpdateThisVm(null);
-  };
+  }, [vmId, getVMByIdResource, setUpdateThisVm]);
 
   const handleCancel = () => {
     setShowConfirmation(false);
@@ -108,23 +113,25 @@ export const VmCard = ({
 
   const handleConfirm = async () => {
     if (statusState !== preStatusState) {
-      setPreStatusState(statusState);
-
       await getVMById();
     }
     setShowConfirmation(false);
   };
 
-  const handleStop = () => {
-    setStatusState("STOPPED");
-    if (checkStatus(statusState, taskState?.action).isRunning)
-      setShowConfirmation(true);
+  const handleStop = async () => {
+    const success = await toggleStatusVM(vmId, "STOPPED");
+    if (success) {
+      setStatusState("STOPPED");
+      setPreStatusState("STOPPED");
+    }
   };
 
-  const handleStart = () => {
-    setStatusState("RUNNING");
-    if (!checkStatus(statusState, taskState?.action).isRunning)
-      setShowConfirmation(true);
+  const handleStart = async () => {
+    const success = await toggleStatusVM(vmId, "RUNNING");
+    if (success) {
+      setStatusState("RUNNING");
+      setPreStatusState("RUNNING");
+    }
   };
 
   const closeModalWarning = () => {
@@ -161,9 +168,15 @@ export const VmCard = ({
     if (updateThisVm === vmId) {
       getVMById();
     }
-  }, [updateThisVm, vmId]);
+  }, [updateThisVm, vmId, getVMById]);
+
+  useEffect(() => {
+    setStatusState(status);
+    setPreStatusState(status);
+  }, [status]);
 
   if (isLoading) return <VmCardSkeleton />;
+
   return (
     <>
       <Stack
@@ -178,7 +191,6 @@ export const VmCard = ({
           boxShadow: `0px 4px 4px ${shadow(mode)}`,
         }}
       >
-        {/* VM Name */}
         <Stack
           width={"100%"}
           flexDirection={"row"}
@@ -209,7 +221,7 @@ export const VmCard = ({
             <PencilIcon fill={"#FFFFFF"} />
           </IconButton>
         </Stack>
-        {/* Status */}
+
         <Stack mt={"12px"}>
           <TagStatus
             status={preStatusState}
@@ -217,7 +229,7 @@ export const VmCard = ({
             task={taskState?.task}
           />
         </Stack>
-        {/* Actions */}
+
         <Stack
           sx={{
             flexDirection: "row",
@@ -226,7 +238,6 @@ export const VmCard = ({
             mt: "16px",
           }}
         >
-          {/* Start */}
           <Btn
             disabled={checkStatus(statusState, taskState?.action).isWaiting}
             onClick={handleStart}
@@ -254,7 +265,7 @@ export const VmCard = ({
               {t("home.start")}
             </TextRob12Font2Xs>
           </Btn>
-          {/* Stop */}
+
           <Btn
             disabled={checkStatus(statusState, taskState?.action).isWaiting}
             onClick={handleStop}
@@ -285,13 +296,8 @@ export const VmCard = ({
             </TextRob12Font2Xs>
           </Btn>
         </Stack>
-        {/* Owner */}
-        <Stack
-          sx={{
-            marginTop: "6px",
-            marginBottom: "6px",
-          }}
-        >
+
+        <Stack sx={{ marginTop: "6px", marginBottom: "6px" }}>
           <TextRob12Font2Xs
             sx={{
               color: theme[mode].gray,
@@ -304,42 +310,25 @@ export const VmCard = ({
             {owner}
           </TextRob12Font2Xs>
         </Stack>
-        {/* Infos */}
+
         <Stack width={"100%"}>
-          {/* Cpu */}
           <Stack
             sx={{
               width: "100%",
-              padding: "0px 0px",
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].gray,
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].gray }}>
               {t("home.cpu")}
             </TextRob16FontL>
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].primary,
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].primary }}>
               {cpuState}
             </TextRob16FontL>
           </Stack>
-          <Divider
-            sx={{
-              borderColor: theme[mode].grayLight,
-              my: "4px",
-            }}
-          />
-          {/* Memory */}
+          <Divider sx={{ borderColor: theme[mode].grayLight, my: "4px" }} />
+
           <Stack
             sx={{
               width: "100%",
@@ -348,30 +337,15 @@ export const VmCard = ({
               justifyContent: "space-between",
             }}
           >
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].gray,
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].gray }}>
               {t("home.ram")}
             </TextRob16FontL>
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].primary,
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].primary }}>
               {memoryState}GB
             </TextRob16FontL>
           </Stack>
-          <Divider
-            sx={{
-              borderColor: theme[mode].grayLight,
-              my: "4px",
-            }}
-          />
-          {/* Disk */}
+          <Divider sx={{ borderColor: theme[mode].grayLight, my: "4px" }} />
+
           <Stack
             ref={ref}
             sx={{
@@ -381,13 +355,7 @@ export const VmCard = ({
               justifyContent: "space-between",
             }}
           >
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].gray,
-                textTransform: "uppercase",
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].gray, textTransform: "uppercase" }}>
               {t("home.disk")}
             </TextRob16FontL>
             <IconButton
@@ -399,30 +367,17 @@ export const VmCard = ({
                 borderRadius: "4px",
                 marginRight: "-4px",
                 gap: "6px",
-                "&:hover": {
-                  backgroundColor: theme[mode].grayLight,
-                  opacity: 0.8,
-                },
+                "&:hover": { backgroundColor: theme[mode].grayLight, opacity: 0.8 },
               }}
             >
               <PencilIcon fill={theme[mode].primary} />
-              <TextRob16FontL
-                sx={{
-                  fontWeight: "500",
-                  color: theme[mode].primary,
-                }}
-              >
+              <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].primary }}>
                 {diskState}GB
               </TextRob16FontL>
             </IconButton>
           </Stack>
-          <Divider
-            sx={{
-              borderColor: theme[mode].grayLight,
-              my: "4px",
-            }}
-          />
-          {/* System */}
+          <Divider sx={{ borderColor: theme[mode].grayLight, my: "4px" }} />
+
           <Stack
             sx={{
               width: "100%",
@@ -432,26 +387,15 @@ export const VmCard = ({
               gap: "2px",
             }}
           >
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].gray,
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].gray }}>
               {t("home.so")}
             </TextRob16FontL>
-            <TextRob16FontL
-              sx={{
-                fontWeight: "500",
-                color: theme[mode].primary,
-                ...makeEllipsis(),
-              }}
-            >
+            <TextRob16FontL sx={{ fontWeight: "500", color: theme[mode].primary, ...makeEllipsis() }}>
               {os}
             </TextRob16FontL>
           </Stack>
         </Stack>
-        {/* Caixa de confirmação */}
+
         <Box
           sx={{
             position: "absolute",
@@ -467,31 +411,20 @@ export const VmCard = ({
             transition: "bottom 0.9s ease-in-out",
             borderTopLeftRadius: "8px",
             borderTopRightRadius: "8px",
-
             ...(!showConfirmation && { display: "none" }),
           }}
         >
-          <Button onClick={handleCancel} sx={{}}>
+          <Button onClick={handleCancel}>
             <CloseIcon sx={{ color: theme[mode].red, fontSize: "14px" }} />
           </Button>
           <Button onClick={handleConfirm}>
             <CheckIcon sx={{ color: theme[mode].blue, fontSize: "14px" }} />
           </Button>
         </Box>
-        {/* Button Show charts */}
-        <Stack
-          sx={{
-            marginTop: "auto",
-            flexDirection: "row",
-            gap: "8px",
-          }}
-        >
-          {/* Chart */}
+
+        <Stack sx={{ marginTop: "auto", flexDirection: "row", gap: "8px" }}>
           <Btn
-            disabled={
-              !checkStatus(statusState, taskState?.action, taskState?.task)
-                .isRunning
-            }
+            disabled={!checkStatus(statusState, taskState?.action, taskState?.task).isRunning}
             onClick={() => {
               setCurrentVMName(vmNameState as string);
               setCurrentIdVM(vmId as number);
@@ -504,31 +437,18 @@ export const VmCard = ({
               borderRadius: "8px",
               display: "flex",
               flexDirection: "row",
-              ":disabled": {
-                opacity: 0.4,
-              },
+              ":disabled": { opacity: 0.4 },
             }}
           >
             <ChartBarIcon fill={theme[mode].blueDark} />
-            <TextRob14Font1Xs
-              sx={{
-                color: theme[mode].blueDark,
-                fontSize: "12px",
-                fontWeight: "500",
-                lineHeight: "16px",
-                wordWrap: "break-word",
-              }}
-            >
+            <TextRob14Font1Xs sx={{ color: theme[mode].blueDark, fontSize: "12px", fontWeight: "500" }}>
               {t("graphics.showGraph")}
             </TextRob14Font1Xs>
           </Btn>
-          {/* Tertminal */}
+
           {getOS({ osValue: os }).hasTerminal && (
             <Btn
-              disabled={
-                checkStatus(statusState, taskState?.action, taskState?.task)
-                  .isWaiting
-              }
+              disabled={checkStatus(statusState, taskState?.action, taskState?.task).isWaiting}
               onClick={() => { }}
               sx={{
                 width: "40px",
@@ -536,24 +456,17 @@ export const VmCard = ({
                 border: "1px solid",
                 borderColor: theme[mode].blueDark,
                 borderRadius: "8px",
-                display: "flex",
-                flexDirection: "row",
                 padding: "0px 4px",
-                ":disabled": {
-                  opacity: 0.4,
-                },
+                ":disabled": { opacity: 0.4 },
               }}
             >
               <TerminalIcon fill={theme[mode].blueDark} />
             </Btn>
           )}
-          {/* Monitor */}
+
           {getOS({ osValue: os }).hasMonitor && (
             <Btn
-              disabled={
-                checkStatus(statusState, taskState?.action, taskState?.task)
-                  .isWaiting
-              }
+              disabled={checkStatus(statusState, taskState?.action, taskState?.task).isWaiting}
               onClick={() => { }}
               sx={{
                 width: "40px",
@@ -561,12 +474,8 @@ export const VmCard = ({
                 border: "1px solid",
                 borderColor: theme[mode].blueDark,
                 borderRadius: "8px",
-                display: "flex",
-                flexDirection: "row",
                 padding: "0px 4px",
-                ":disabled": {
-                  opacity: 0.4,
-                },
+                ":disabled": { opacity: 0.4 },
               }}
             >
               <MonitorIcon fill={theme[mode].blueDark} />
@@ -574,7 +483,7 @@ export const VmCard = ({
           )}
         </Stack>
       </Stack>
-      {/* Modais */}
+
       {openModal && (
         <ModalChangeValueInput
           label={vmNameState}
